@@ -102,3 +102,98 @@ bool IO::UserInput::activateJumpDetection() {
     cout << endl << ">> Jump Detection OFF\n\n\n\n" << endl;
     return false;
 }
+
+void IO::UserInput::onMouse(int event, int x, int y, int flags, void* userdata) {
+    try {
+        if (event == EVENT_LBUTTONDOWN) {
+
+            if (DetectionValues::jumpDetectionActivated && GraphicsValues::CVJumpLine::Lines.size() != 0) {
+
+                // Click on the jump line
+                if (y >= GraphicsValues::CVJumpLine::Lines[0].Position.y - 15 && y <= GraphicsValues::CVJumpLine::Lines[0].Position.y + 15) {
+
+                    GraphicsValues::CVJumpLine::Lines[0].SELECTED = true;
+                }
+                else if (GraphicsValues::CVJumpLine::Lines[0].SELECTED == true) {
+
+                    GraphicsValues::CVJumpLine::Lines[0].SELECTED = false;
+                }
+            }
+
+            if (GraphicsValues::CVSquares::Squares.size() != 0) {
+
+                for (int i = 0; i < GraphicsValues::CVSquares::Squares.size(); i++) {
+
+                    // Click on a square
+                    if (Detection::ClickDetection::WasClickOnSquare(i, x, y)) {
+
+                        if (DetectionValues::jumpDetectionActivated) {
+
+                            GraphicsValues::CVJumpLine::Lines[0].SELECTED = false;
+                        }
+
+                        if (IOValues::selectedSquare == GraphicsValues::CVSquares::Squares[i].ID) { break; }
+                        else {
+                            for (auto& square : GraphicsValues::CVSquares::Squares) {
+                                if (square.ID == IOValues::selectedSquare) {
+                                    square.SELECTED = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        IOValues::selectedSquare = GraphicsValues::CVSquares::Squares[i].ID;
+
+                        GraphicsValues::CVSquares::Squares[i].SELECTED = true;
+
+                        break;
+                    }
+                    else if (IOValues::selectedSquare != -1) {
+
+                        for (auto& square : GraphicsValues::CVSquares::Squares) {
+                            if (square.ID == IOValues::selectedSquare) {
+                                square.SELECTED = false;
+                                break;
+                            }
+                        }
+
+                        IOValues::selectedSquare = -1;
+                    }
+                }
+            }
+        }
+        if (event == EVENT_LBUTTONDBLCLK) {
+            Graphics::ImageManager::createSquare(x, y, 0, "...");
+        }
+        if (event == EVENT_RBUTTONDOWN) {
+
+            if (GraphicsValues::CVSquares::Squares.size() != 0 || IOValues::selectedSquare != -1) {
+
+                for (int i = 0; i < GraphicsValues::CVSquares::Squares.size(); i++) {
+
+                    if (Detection::ClickDetection::WasClickOnSquare(i, x, y)) {
+                        try {
+                            auto lambda = IOValues::selectedSquare;
+
+                            GraphicsValues::CVSquares::Squares.erase(remove_if(GraphicsValues::CVSquares::Squares.begin(), GraphicsValues::CVSquares::Squares.end(),
+                                [lambda](const GraphicsValues::CVSquares::Rectangles& square) { return square.ID == IOValues::selectedSquare; }), GraphicsValues::CVSquares::Squares.end());
+
+                            GraphicsValues::CVSquares::Frames.erase(remove_if(GraphicsValues::CVSquares::Frames.begin(), GraphicsValues::CVSquares::Frames.end(),
+                                [lambda](const GraphicsValues::CVSquares::Images& frame) { return frame.ID == IOValues::selectedSquare; }), GraphicsValues::CVSquares::Frames.end());
+
+                            IOValues::selectedSquare = -1;
+
+                            IO::FileManager::saveSquares();
+                        }
+                        catch (const exception& e) {
+                            cerr << "Nao foi possivel remover o quadrado selecionado, o metodo erase retornou o seguinte erro: " << e.what() << endl;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    catch (const exception& e) {
+        cerr << "It was not possible to handle the mouse event, the program returned the following error: " << e.what() << endl;
+    }
+}
