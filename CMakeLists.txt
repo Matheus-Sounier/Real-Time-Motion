@@ -10,6 +10,35 @@ find_package(OpenCV REQUIRED)
 include_directories(
     ${OpenCV_INCLUDE_DIRS}
 
+    Detection
+    Detection/Var
+
+    Graphics
+    Graphics/Var
+
     IO
     IO/Var
+
+    MapKeys
+)
+
+add_executable(JumpKingIRL
+
+    main.cpp
+
+    Detection/DetectionFunctions.cpp
+    Detection/Var/DetectionValues.cpp
+
+    Graphics/GraphicsFunctions.cpp
+    Graphics/Var/GraphicsValues.cpp
+
+    IO/IOFunctions.cpp
+    IO/Var/IOValues.cpp
+
+    MapKeys/MapKeys.cpp
+)
+
+target_link_libraries(
+    JumpKingIRL
+    ${OpenCV_LIBS}
 )
