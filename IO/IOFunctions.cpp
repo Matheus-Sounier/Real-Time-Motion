@@ -197,3 +197,34 @@ void IO::UserInput::onMouse(int event, int x, int y, int flags, void* userdata) 
         cerr << "It was not possible to handle the mouse event, the program returned the following error: " << e.what() << endl;
     }
 }
+
+void IO::UserInput::CustomElementsOnWindow() {
+    try {
+        int keyPressed = waitKeyEx(10);
+
+        if (GraphicsValues::CVJumpLine::Lines[0].SELECTED == true) {
+
+            // Moves the jump line up
+            if (keyPressed == 2490368) {
+
+                if (GraphicsValues::CVJumpLine::Lines[0].Position.y > 5) {
+
+                    GraphicsValues::CVJumpLine::Lines[0].Position.y -= 5;
+                    Graphics::ImageManager::resizeJumpArea();
+                }
+            }
+            // Moves the jump line down
+            if (keyPressed == 2621440) {
+
+                if (GraphicsValues::CVJumpLine::Lines[0].Position.y + 5 < GraphicsValues::CVMatFrames::imgFlip.size().height) {
+
+                    GraphicsValues::CVJumpLine::Lines[0].Position.y += 5;
+                    Graphics::ImageManager::resizeJumpArea();
+                }
+            }
+        }
+    }
+    catch (const exception& e) {
+        cerr << "It was not possible to custom the jump line height, the program returned the following error: " << e.what() << endl;
+    }
+}
