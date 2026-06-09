@@ -16,13 +16,13 @@ namespace IO {
 
 	class UserInput {
 	public:
-		// Display usage instructions
+		// usage instructions
 		static void DisplayInstructions();
 
-		// Ask to enable jump detection
+		// enable jump detection
 		static bool activateJumpDetection();
 
-		// Handle custom window interactions
+		// custom window interactions
 		static void CustomElementsOnWindow();
 		static void CustomElementsOnWindow(unsigned selectedSquare, IO::FileManager& fileManager);
 		static void onMouse(int event, int x, int y, int flags, void* userdata);
