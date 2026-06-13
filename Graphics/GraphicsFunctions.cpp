@@ -60,3 +60,19 @@ void Graphics::ImageManager::createSquare(unsigned SquareX, unsigned SquareY, un
         }
     }
 }
+
+void Graphics::ImageManager::resizeJumpArea() {
+    try {
+        Size new_jumpareasize(GraphicsValues::CVMatFrames::imgFlip.size().width, GraphicsValues::CVJumpLine::Lines[0].Position.y);
+
+        resize(GraphicsValues::CVMatFrames::JumpIMGCrop, GraphicsValues::CVMatFrames::JumpIMGCrop, new_jumpareasize);
+        resize(GraphicsValues::CVMatFrames::JumpIMGGray, GraphicsValues::CVMatFrames::JumpIMGGray, new_jumpareasize);
+        resize(GraphicsValues::CVMatFrames::JumpIMGBackground, GraphicsValues::CVMatFrames::JumpIMGBackground, new_jumpareasize);
+        resize(GraphicsValues::CVMatFrames::JumpIMGThres, GraphicsValues::CVMatFrames::JumpIMGThres, new_jumpareasize);
+        resize(GraphicsValues::CVMatFrames::JumpIMGSub, GraphicsValues::CVMatFrames::JumpIMGSub, new_jumpareasize);
+        resize(GraphicsValues::CVMatFrames::JumpIMGDil, GraphicsValues::CVMatFrames::JumpIMGDil, new_jumpareasize);
+    }
+    catch (const exception& e) {
+        cerr << "It was not possible to resize the jump detection image, the program returned the following error: " << e.what() << endl;
+    }
+}
