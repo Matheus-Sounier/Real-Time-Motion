@@ -119,11 +119,11 @@ void Graphics::ImageManager::drawJumpLine(Mat imgFlip) {
                 if (clamped < MIN_POWER) clamped = MIN_POWER;
                 else if (clamped > MAX_POWER) clamped = MAX_POWER;
                 float frac = (float)(clamped - MIN_POWER) / (float)(MAX_POWER - MIN_POWER);
-                rectangle(imgFlip, Point(x + 2, y + 2), Point(x + 2 + static_cast<int>((barWidth - 4) * frac), y + barHeight - 2), Scalar(0, 255, 255), cv::FILLED);
-                rectangle(imgFlip, Point(x, y), Point(x + barWidth, y + barHeight), Scalar(200, 200, 200), 1);
+                rectangle(imgFlip, Point(x+2, y+2), Point(x + 2 + static_cast<int>((barWidth-4)*frac), y + barHeight - 2), Scalar(0, 255, 255), cv::FILLED);
+                rectangle(imgFlip, Point(x, y), Point(x + barWidth, y + barHeight), Scalar(200,200,200), 1);
                 char buf[64];
                 snprintf(buf, sizeof(buf), "Charging: %d ms", durationSoFar);
-                putText(imgFlip, buf, Point(x, y - 8), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(220, 220, 220), 1);
+                putText(imgFlip, buf, Point(x, y - 8), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(220,220,220), 1);
             }
             else if (DetectionValues::jumpStored) {
                 // show stored power
@@ -136,13 +136,13 @@ void Graphics::ImageManager::drawJumpLine(Mat imgFlip) {
                 if (clamped < MIN_POWER) clamped = MIN_POWER;
                 else if (clamped > MAX_POWER) clamped = MAX_POWER;
                 float frac = (float)(clamped - MIN_POWER) / (float)(MAX_POWER - MIN_POWER);
-                rectangle(imgFlip, Point(x + 2, y + 2), Point(x + 2 + static_cast<int>((barWidth - 4) * frac), y + barHeight - 2), Scalar(180, 180, 0), cv::FILLED);
-                rectangle(imgFlip, Point(x, y), Point(x + barWidth, y + barHeight), Scalar(200, 200, 200), 1);
+                rectangle(imgFlip, Point(x+2, y+2), Point(x + 2 + static_cast<int>((barWidth-4)*frac), y + barHeight - 2), Scalar(180, 180, 0), cv::FILLED);
+                rectangle(imgFlip, Point(x, y), Point(x + barWidth, y + barHeight), Scalar(200,200,200), 1);
                 char buf[64];
                 snprintf(buf, sizeof(buf), "Stored: %d ms", stored);
-                putText(imgFlip, buf, Point(x, y - 8), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(220, 220, 220), 1);
+                putText(imgFlip, buf, Point(x, y - 8), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(220,220,220), 1);
                 // indicate waiting for direction
-                putText(imgFlip, "Select direction", Point(x + barWidth + 10, y + barHeight - 2), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(200, 200, 200), 1);
+                putText(imgFlip, "Select direction", Point(x + barWidth + 10, y + barHeight - 2), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(200,200,200), 1);
             }
             else if (DetectionValues::executingJump) {
                 putText(imgFlip, "Executing jump...", Point(x, y - 8), FONT_HERSHEY_SIMPLEX, 0.6, Scalar(180, 200, 255), 1);
@@ -151,8 +151,71 @@ void Graphics::ImageManager::drawJumpLine(Mat imgFlip) {
         catch (...) {
             // ignore
         }
-    }
+    } 
     catch (const exception& e) {
         cerr << "It was not possible to draw the jump line, the program returned the following error: " << e.what() << endl;
+    }
+}
+
+// Preprocess above jump line
+void Graphics::ImageManager::preprocessImageAboveLine(Mat imgFlip) {
+    try {
+        Rect roi(Point(0, 0), Point(imgFlip.size().width, GraphicsValues::CVJumpLine::Lines[0].Position.y));
+
+        GraphicsValues::CVMatFrames::JumpIMGCrop = imgFlip(roi);
+
+        cvtColor(GraphicsValues::CVMatFrames::JumpIMGCrop, GraphicsValues::CVMatFrames::JumpIMGGray, COLOR_BGR2GRAY);
+
+        // Apply CLAHE
+        try {
+            if (!g_clahe) g_clahe = createCLAHE(2.0, Size(8, 8));
+            Mat tmpClahe;
+            g_clahe->apply(GraphicsValues::CVMatFrames::JumpIMGGray, tmpClahe);
+            GraphicsValues::CVMatFrames::JumpIMGGray = tmpClahe;
+        }
+        catch (...) {}
+
+        if (GraphicsValues::CVMatFrames::JumpIMGBackground.empty()) {
+            GraphicsValues::CVMatFrames::JumpIMGBackground = GraphicsValues::CVMatFrames::JumpIMGGray.clone();
+        }
+
+        addWeighted(GraphicsValues::CVMatFrames::JumpIMGBackground, 0.83, GraphicsValues::CVMatFrames::JumpIMGGray, 0.17, 0, GraphicsValues::CVMatFrames::JumpIMGBackground);
+
+        absdiff(GraphicsValues::CVMatFrames::JumpIMGBackground, GraphicsValues::CVMatFrames::JumpIMGGray, GraphicsValues::CVMatFrames::JumpIMGSub);
+
+        // Blur before threshold
+        try {
+            cv::Mat tmpBlur;
+            GaussianBlur(GraphicsValues::CVMatFrames::JumpIMGSub, tmpBlur, Size(5, 5), 0);
+
+            // Adjust threshold dynamically based on background brightness to reduce false positives
+            double meanBg = 0.0;
+            try { meanBg = cv::mean(GraphicsValues::CVMatFrames::JumpIMGBackground)[0]; } catch(...) { meanBg = 128.0; }
+            int adaptiveThresh = DetectionValues::PIXEL_THRESHOLD;
+            if (meanBg < 80.0) {
+                // darker background -> increase threshold to ignore small noise
+                adaptiveThresh = std::min(255, adaptiveThresh + static_cast<int>((80.0 - meanBg) / 2.0));
+            }
+            else if (meanBg > 180.0) {
+                // very bright background -> slightly lower threshold
+                adaptiveThresh = std::max(1, adaptiveThresh - static_cast<int>((meanBg - 180.0) / 4.0));
+            }
+
+            threshold(tmpBlur, GraphicsValues::CVMatFrames::JumpIMGThres, adaptiveThresh, 255, THRESH_BINARY);
+        }
+        catch(...) {
+            threshold(GraphicsValues::CVMatFrames::JumpIMGSub, GraphicsValues::CVMatFrames::JumpIMGThres, DetectionValues::PIXEL_THRESHOLD, 255, THRESH_BINARY);
+        }
+
+        // Morphology and dilate
+        Mat kernelOpen = getStructuringElement(MORPH_RECT, Size(3, 3));
+        try { morphologyEx(GraphicsValues::CVMatFrames::JumpIMGThres, GraphicsValues::CVMatFrames::JumpIMGThres, MORPH_OPEN, kernelOpen); } catch(...) {}
+
+        Mat kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+
+        dilate(GraphicsValues::CVMatFrames::JumpIMGThres, GraphicsValues::CVMatFrames::JumpIMGDil, kernel);
+    }
+    catch (const exception& e) {
+        cerr << "OpenCV could not process the jump detection image properly, the program returned the following error: " << e.what() << endl;
     }
 }
