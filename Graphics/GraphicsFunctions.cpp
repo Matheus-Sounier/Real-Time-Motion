@@ -29,3 +29,34 @@ unsigned Graphics::CameraUtils::initializeCamera() {
 
     return 1;
 }
+
+void Graphics::ImageManager::createSquare(unsigned SquareX, unsigned SquareY, unsigned SquareKey, string SquareDisplayName) {
+    if (SquareX > 0 && SquareY > 0 && SquareX + 80 <= GraphicsValues::CVMatFrames::imgFlip.size().width && SquareY + 100 <= GraphicsValues::CVMatFrames::imgFlip.size().height) {
+        try {
+            random_device rd;
+            mt19937 gen(rd());
+            uniform_int_distribution<int> dis(1, 1000);
+
+            GraphicsValues::CVSquares::Rectangles new_square{};
+            new_square.TL = Point(SquareX, SquareY);
+            new_square.BR = Point(SquareX + 80, SquareY + 100);
+            new_square.COLOR = Scalar(0, 0, 255); // BGR FORMAT
+            new_square.KEY = SquareKey;
+            new_square.DISPLAYKEY = SquareDisplayName;
+            new_square.SELECTED = false;
+            new_square.MOTION_DETECTED = false;
+            new_square.ID = dis(gen);
+
+            GraphicsValues::CVSquares::Squares.push_back(new_square);
+
+            GraphicsValues::CVSquares::Images new_frame{};
+            new_frame.ID = new_square.ID;
+            GraphicsValues::CVSquares::Frames.push_back(new_frame);
+
+            IO::FileManager::saveSquares();
+        }
+        catch (const exception& e) {
+            cerr << "It was not possible to create a square, the program returned the following error: " << e.what() << endl;
+        }
+    }
+}
