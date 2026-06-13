@@ -26,6 +26,20 @@ namespace GraphicsValues {
             int ID;
         };
 
+        /// Square metadata
+        struct Rectangles {
+            cv::Point TL;
+            cv::Point BR;
+            cv::Scalar COLOR;
+            int KEY;
+            std::string DISPLAYKEY;
+            bool SELECTED;
+            bool MOTION_DETECTED;
+            int ID;
+        };
+
         extern std::vector<Images> Frames;
+        extern std::vector<Rectangles> Squares;
+        extern std::vector<std::vector<cv::Point>> contours;
     }
 }
