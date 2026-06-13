@@ -219,3 +219,69 @@ void Graphics::ImageManager::preprocessImageAboveLine(Mat imgFlip) {
         cerr << "OpenCV could not process the jump detection image properly, the program returned the following error: " << e.what() << endl;
     }
 }
+
+// Preprocess squares
+void Graphics::ImageManager::preprocessImage(Mat imgFlip) {
+    try {
+        for (int i = 0; i < GraphicsValues::CVSquares::Squares.size(); i++) {
+
+            Rect roi(GraphicsValues::CVSquares::Squares[i].TL, Size(80, 100));
+
+            GraphicsValues::CVSquares::Frames[i].imgCrop = imgFlip(roi);
+
+            cvtColor(GraphicsValues::CVSquares::Frames[i].imgCrop, GraphicsValues::CVSquares::Frames[i].imgGray, COLOR_BGR2GRAY);
+
+            if (GraphicsValues::CVSquares::Frames[i].imgBackground.empty()) {
+
+                GraphicsValues::CVSquares::Frames[i].imgBackground = GraphicsValues::CVSquares::Frames[i].imgGray.clone();
+            }
+
+            // Apply CLAHE
+            try {
+                if (!g_clahe) g_clahe = cv::createCLAHE(2.0, cv::Size(8,8));
+                cv::Mat tmpSq;
+                g_clahe->apply(GraphicsValues::CVSquares::Frames[i].imgGray, tmpSq);
+                GraphicsValues::CVSquares::Frames[i].imgGray = tmpSq;
+            }
+            catch (...) {}
+
+            addWeighted(GraphicsValues::CVSquares::Frames[i].imgBackground, 0.83, GraphicsValues::CVSquares::Frames[i].imgGray, 0.17, 0, GraphicsValues::CVSquares::Frames[i].imgBackground);
+
+            absdiff(GraphicsValues::CVSquares::Frames[i].imgBackground, GraphicsValues::CVSquares::Frames[i].imgGray, GraphicsValues::CVSquares::Frames[i].imgSub);
+
+            // Blur and threshold
+            try {
+                cv::Mat tmpBlurSq;
+                GaussianBlur(GraphicsValues::CVSquares::Frames[i].imgSub, tmpBlurSq, Size(5, 5), 0);
+
+                double meanBgSq = 0.0;
+                try { meanBgSq = cv::mean(GraphicsValues::CVSquares::Frames[i].imgBackground)[0]; } catch(...) { meanBgSq = 128.0; }
+                int adaptiveThreshSq = DetectionValues::PIXEL_THRESHOLD;
+                if (meanBgSq < 80.0) {
+                    adaptiveThreshSq = std::min(255, adaptiveThreshSq + static_cast<int>((80.0 - meanBgSq) / 2.0));
+                }
+                else if (meanBgSq > 180.0) {
+                    adaptiveThreshSq = std::max(1, adaptiveThreshSq - static_cast<int>((meanBgSq - 180.0) / 4.0));
+                }
+
+                threshold(tmpBlurSq, GraphicsValues::CVSquares::Frames[i].imgThres, adaptiveThreshSq, 255, THRESH_BINARY);
+            }
+            catch(...) {
+                threshold(GraphicsValues::CVSquares::Frames[i].imgSub, GraphicsValues::CVSquares::Frames[i].imgThres, DetectionValues::PIXEL_THRESHOLD, 255, THRESH_BINARY);
+            }
+
+            // Morphology and dilate
+            Mat kernelOpen = getStructuringElement(MORPH_RECT, Size(3, 3));
+            try { morphologyEx(GraphicsValues::CVSquares::Frames[i].imgThres, GraphicsValues::CVSquares::Frames[i].imgThres, MORPH_OPEN, kernelOpen); } catch(...) {}
+
+            Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+
+            dilate(GraphicsValues::CVSquares::Frames[i].imgThres, GraphicsValues::CVSquares::Frames[i].imgDil, kernel);
+
+            putText(imgFlip, GraphicsValues::CVSquares::Squares[i].DISPLAYKEY, Point(GraphicsValues::CVSquares::Squares[i].TL.x + 10, GraphicsValues::CVSquares::Squares[i].TL.y + 45), FONT_HERSHEY_DUPLEX, 0.5, GraphicsValues::CVSquares::Squares[i].COLOR, 1.99);
+        }
+    }
+    catch (const exception& e) {
+        cerr << "OpenCV could not process the image properly, the program returned the following error: " << e.what() << endl;
+    }
+}
