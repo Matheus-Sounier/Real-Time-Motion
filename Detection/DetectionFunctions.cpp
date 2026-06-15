@@ -24,4 +24,23 @@ namespace Detection {
 		if (key >= 'a' && key <= 'z') return std::toupper(static_cast<unsigned char>(key));
 		return key;
 	}
+
+	namespace ClickDetection {
+		bool WasClickOnSquare(unsigned i, int x, int y) {
+			try {
+				if (i >= CVSquares::Squares.size()) return false;
+
+				const auto& sq = CVSquares::Squares[i];
+
+				if (x >= sq.TL.x && x <= sq.BR.x && y >= sq.TL.y && y <= sq.BR.y) {
+					return true;
+				}
+
+				return false;
+			}
+			catch (...) {
+				return false;
+			}
+		}
+	}
 }
