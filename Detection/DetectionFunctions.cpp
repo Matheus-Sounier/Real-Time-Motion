@@ -136,6 +136,31 @@ namespace Detection {
 					std::this_thread::sleep_for(15ms);
 					continue;
 				}
+
+			try {
+				for (size_t qi = 0; qi < CVSquares::Frames.size() && qi < CVSquares::Squares.size(); ++qi) {
+					int sqChanged = 0;
+					try {
+						const auto &f = CVSquares::Frames[qi];
+						if (!f.imgThres.empty()) {
+							std::vector<std::vector<cv::Point>> contours;
+							cv::Mat tmp = f.imgThres.clone();
+							cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+							for (const auto &c : contours) {
+								double a = cv::contourArea(c);
+								if (a >= GraphicsValues::TOLERANCE) sqChanged += static_cast<int>(a);
+							}
+						}
+					} catch (...) { sqChanged = 0; }
+					if ((qi % 2) == 0) {
+						std::cout << "[DEBUG][square] idx=" << qi << " changed=" << sqChanged << " key=" << CVSquares::Squares[qi].KEY << " motion=" << (CVSquares::Squares[qi].MOTION_DETECTED ? 1 : 0) << std::endl;
+					}
+				}
+			}
+			catch (...) {
+			}
+
+				
 			}
 			catch (...) {
 			}
