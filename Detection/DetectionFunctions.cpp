@@ -71,6 +71,96 @@ namespace Detection {
 							}
 							continue;
 						}
+
+						int changed = 0;
+						try {
+							if (!fr.imgThres.empty()) {
+								std::vector<std::vector<cv::Point>> contours;
+								cv::Mat tmp = fr.imgThres.clone();
+								cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+								for (const auto &c : contours) {
+									double a = cv::contourArea(c);
+									if (a >= GraphicsValues::TOLERANCE) changed += static_cast<int>(a);
+								}
+							}
+						}
+						catch (...) { changed = 0; }
+
+						int computed = DetectionValues::MOVEMENT_THRESHOLD / 6;
+						int hysteresis = (computed > 1) ? computed : 1;
+						int offThreshold = DetectionValues::MOVEMENT_THRESHOLD - hysteresis;
+						bool motion = sq.MOTION_DETECTED ? (changed >= offThreshold) : (changed >= DetectionValues::MOVEMENT_THRESHOLD);
+
+						int sid = sq.ID;
+						auto now = std::chrono::steady_clock::now();
+
+						if (motion) {
+							if (!sq.MOTION_DETECTED) {
+								auto it = motionOnStart.find(sid);
+								if (it == motionOnStart.end()) motionOnStart[sid] = now;
+								else {
+									auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - it->second).count();
+									if (elapsed >= MOTION_ON_STABLE_MS) {
+										sq.MOTION_DETECTED = true;
+										sq.COLOR = cv::Scalar(0, 255, 0);
+										if (sq.KEY != 0 && !(DetectionValues::jumpStored || DetectionValues::executingJump)) MapKeys::PressKey(normalize_vk(sq.KEY));
+										pressStartTimes[sid] = now;
+										motionOffStart.erase(sid);
+										motionOnStart.erase(sid);
+									}
+								}
+							}
+							else {
+								motionOffStart.erase(sid);
+								motionOnStart.erase(sid);
+							}
+						}
+						else {
+							if (sq.MOTION_DETECTED) {
+								auto itPress = pressStartTimes.find(sid);
+								if (itPress != pressStartTimes.end()) {
+									auto pressDur = std::chrono::duration_cast<std::chrono::milliseconds>(now - itPress->second).count();
+									if (pressDur < TAP_THRESHOLD_MS) {
+										sq.MOTION_DETECTED = false;
+										sq.COLOR = cv::Scalar(0, 0, 255);
+										if (sq.KEY != 0) {
+											int vk = normalize_vk(sq.KEY);
+											if (!(DetectionValues::executingJump && DetectionValues::currentDirectionKey == vk) &&
+												!(DetectionValues::jumpStored && DetectionValues::currentDirectionKey == vk)) {
+												MapKeys::ReleaseKey(vk);
+											}
+										}
+										motionOnStart.erase(sid);
+										motionOffStart.erase(sid);
+										pressStartTimes.erase(sid);
+										continue;
+									}
+								}
+								auto it = motionOffStart.find(sid);
+								if (it == motionOffStart.end()) motionOffStart[sid] = now;
+								else {
+									auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - it->second).count();
+									if (elapsed >= MOTION_OFF_STABLE_MS) {
+										sq.MOTION_DETECTED = false;
+										sq.COLOR = cv::Scalar(0, 0, 255);
+										if (sq.KEY != 0) {
+											int vk = normalize_vk(sq.KEY);
+											if (!(DetectionValues::executingJump && DetectionValues::currentDirectionKey == vk) &&
+												!(DetectionValues::jumpStored && DetectionValues::currentDirectionKey == vk)) {
+												MapKeys::ReleaseKey(vk);
+											}
+										}
+										motionOnStart.erase(sid);
+										motionOffStart.erase(sid);
+										pressStartTimes.erase(sid);
+									}
+								}
+							}
+							else {
+								motionOnStart.erase(sid);
+								motionOffStart.erase(sid);
+							}
+						}
 					}
 					catch (...) {
 						// per-square exception
@@ -172,46 +262,10 @@ namespace Detection {
 						DetectionValues::currentChargingMs = 0;
 						preStableStart = std::chrono::steady_clock::time_point();
 					}
-				} else if (changed < JUMP_THRESHOLD) {
+				}
+				else if (changed < JUMP_THRESHOLD) {
 					preStableStart = std::chrono::steady_clock::time_point();
-				}
-
-				bool restartedCharging = false;
-				if (chargingJump) {
-					try {
-						auto nowDraw = std::chrono::steady_clock::now();
-						DetectionValues::currentChargingMs = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(nowDraw - jumpStartTime).count());
-					}
-					catch (...) {}
-
-					if (changed < JUMP_THRESHOLD) {
-						const int LAND_STABLE_MS = 60;
-						int stableWaited = 0;
-						const int POLL_MS = 20;
-						while (stableWaited < LAND_STABLE_MS) {
-							std::this_thread::sleep_for(std::chrono::milliseconds(POLL_MS));
-							stableWaited += POLL_MS;
-							int liveChanged = 0;
-							try {
-								cv::Mat liveImg = CVMatFrames::JumpIMGDil.empty() ? CVMatFrames::JumpIMGThres : CVMatFrames::JumpIMGDil;
-								if (!liveImg.empty()) {
-									std::vector<std::vector<cv::Point>> contours;
-									cv::Mat tmp = liveImg.clone();
-									cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-									for (const auto& c : contours) {
-										double a = cv::contourArea(c);
-										if (a >= GraphicsValues::TOLERANCE) liveChanged += static_cast<int>(a);
-									}
-								}
-							}
-							catch (...) { liveChanged = 0; }
-							if (liveChanged >= JUMP_THRESHOLD) {
-								restartedCharging = true;
-								break;
-							}
-						}
-					}
-				}
+				}	
 			}
 			catch (...) {
 			}
