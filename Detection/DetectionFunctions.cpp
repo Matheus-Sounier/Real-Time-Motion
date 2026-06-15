@@ -78,8 +78,49 @@ namespace Detection {
 				}
 			}
 			catch (...) {
-				// global exception
+				// loop exception
 			}
+
+			std::this_thread::sleep_for(15ms);
+		}
+	}
+
+	void MotionDetection::detectJump() {
+		// State machine for jump detection and charging
+		static std::chrono::steady_clock::time_point lastLandingTime;
+		while (true) {
+			try {
+				if (!jumpDetectionActivated) {
+					chargingJump = false;
+					jumpStored = false;
+					std::this_thread::sleep_for(50ms);
+					continue;
+				}
+
+				if (CVMatFrames::JumpIMGThres.empty() && CVMatFrames::JumpIMGDil.empty()) {
+					std::this_thread::sleep_for(20ms);
+					continue;
+				}
+
+				cv::Mat imgToCheck = CVMatFrames::JumpIMGDil.empty() ? CVMatFrames::JumpIMGThres : CVMatFrames::JumpIMGDil;
+
+				int changed = 0;
+				try {
+					if (!imgToCheck.empty()) {
+						std::vector<std::vector<cv::Point>> contours;
+						cv::Mat tmp = imgToCheck.clone();
+						cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+						for (const auto &c : contours) {
+							double a = cv::contourArea(c);
+							if (a >= GraphicsValues::TOLERANCE) changed += static_cast<int>(a);
+						}
+					}
+				} catch (...) { changed = 0; }
+			}
+			catch (...) {
+			}
+
+			std::this_thread::sleep_for(15ms);
 		}
 	}
 }
