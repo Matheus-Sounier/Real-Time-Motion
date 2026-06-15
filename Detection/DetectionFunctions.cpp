@@ -176,6 +176,42 @@ namespace Detection {
 					preStableStart = std::chrono::steady_clock::time_point();
 				}
 
+				bool restartedCharging = false;
+				if (chargingJump) {
+					try {
+						auto nowDraw = std::chrono::steady_clock::now();
+						DetectionValues::currentChargingMs = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(nowDraw - jumpStartTime).count());
+					}
+					catch (...) {}
+
+					if (changed < JUMP_THRESHOLD) {
+						const int LAND_STABLE_MS = 60;
+						int stableWaited = 0;
+						const int POLL_MS = 20;
+						while (stableWaited < LAND_STABLE_MS) {
+							std::this_thread::sleep_for(std::chrono::milliseconds(POLL_MS));
+							stableWaited += POLL_MS;
+							int liveChanged = 0;
+							try {
+								cv::Mat liveImg = CVMatFrames::JumpIMGDil.empty() ? CVMatFrames::JumpIMGThres : CVMatFrames::JumpIMGDil;
+								if (!liveImg.empty()) {
+									std::vector<std::vector<cv::Point>> contours;
+									cv::Mat tmp = liveImg.clone();
+									cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+									for (const auto& c : contours) {
+										double a = cv::contourArea(c);
+										if (a >= GraphicsValues::TOLERANCE) liveChanged += static_cast<int>(a);
+									}
+								}
+							}
+							catch (...) { liveChanged = 0; }
+							if (liveChanged >= JUMP_THRESHOLD) {
+								restartedCharging = true;
+								break;
+							}
+						}
+					}
+				}
 			}
 			catch (...) {
 			}
