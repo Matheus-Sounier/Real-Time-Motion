@@ -160,7 +160,22 @@ namespace Detection {
 			catch (...) {
 			}
 
-				
+				const int PRE_STABLE_MS = 80;
+				static std::chrono::steady_clock::time_point preStableStart;
+				if (!chargingJump && changed >= JUMP_THRESHOLD) {
+					auto now = std::chrono::steady_clock::now();
+					if (preStableStart.time_since_epoch().count() == 0) preStableStart = now;
+					if (std::chrono::duration_cast<std::chrono::milliseconds>(now - preStableStart).count() >= PRE_STABLE_MS) {
+						chargingJump = true;
+						jumpStored = false;
+						jumpStartTime = std::chrono::steady_clock::now();
+						DetectionValues::currentChargingMs = 0;
+						preStableStart = std::chrono::steady_clock::time_point();
+					}
+				} else if (changed < JUMP_THRESHOLD) {
+					preStableStart = std::chrono::steady_clock::time_point();
+				}
+
 			}
 			catch (...) {
 			}
