@@ -116,6 +116,26 @@ namespace Detection {
 						}
 					}
 				} catch (...) { changed = 0; }
+
+				const int JUMP_COOLDOWN_MS = 100;
+
+				if (jumpStored && changed >= JUMP_THRESHOLD) {
+					auto nowCheck = std::chrono::steady_clock::now();
+					if (lastLandingTime.time_since_epoch().count() != 0) {
+						auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(nowCheck - lastLandingTime).count();
+						if (diff < JUMP_COOLDOWN_MS) {
+							std::this_thread::sleep_for(15ms);
+							continue;
+						}
+					}
+					chargingJump = true;
+					jumpStored = false;
+					storedJumpPower = 0;
+					jumpStartTime = std::chrono::steady_clock::now();
+					DetectionValues::currentChargingMs = 0;
+					std::this_thread::sleep_for(15ms);
+					continue;
+				}
 			}
 			catch (...) {
 			}
