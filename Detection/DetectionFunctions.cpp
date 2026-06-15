@@ -43,4 +43,43 @@ namespace Detection {
 			}
 		}
 	}
+
+	void MotionDetection::detectMovement() {
+		while (true) {
+			try {
+				const size_t count = (CVSquares::Squares.size() < CVSquares::Frames.size()) ? CVSquares::Squares.size() : CVSquares::Frames.size();
+
+				const int MOTION_ON_STABLE_MS = 30;
+				const int MOTION_OFF_STABLE_MS = 10;
+				static std::unordered_map<int, std::chrono::steady_clock::time_point> motionOnStart;
+				static std::unordered_map<int, std::chrono::steady_clock::time_point> motionOffStart;
+				static std::unordered_map<int, std::chrono::steady_clock::time_point> pressStartTimes;
+				const int TAP_THRESHOLD_MS = 120;
+
+				for (size_t i = 0; i < count; ++i) {
+					try {
+						auto& sq = CVSquares::Squares[i];
+						auto& fr = CVSquares::Frames[i];
+
+						if (fr.imgDil.empty()) {
+							sq.MOTION_DETECTED = false;
+							if (sq.KEY != 0) {
+								int vk = normalize_vk(sq.KEY);
+								if (!(DetectionValues::executingJump && DetectionValues::currentDirectionKey == vk)) {
+									MapKeys::ReleaseKey(vk);
+								}
+							}
+							continue;
+						}
+					}
+					catch (...) {
+						// per-square exception
+					}
+				}
+			}
+			catch (...) {
+				// global exception
+			}
+		}
+	}
 }
