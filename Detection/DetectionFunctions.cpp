@@ -382,4 +382,20 @@ namespace Detection {
 									}
 								}
 								catch (...) { liveChanged = 0; }
-							
+								if (liveChanged >= JUMP_THRESHOLD) {
+									// begin new charging cycle reusing existing flags
+									chargingJump = true;
+									jumpStored = false;
+									storedJumpPower = 0;
+									jumpStartTime = std::chrono::steady_clock::now();
+									DetectionValues::currentChargingMs = 0;
+									restartedCharging = true;
+									break;
+								}
+							}
+							catch (...) {}
+
+							std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
+						}
+
+						
