@@ -398,4 +398,44 @@ namespace Detection {
 							std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
 						}
 
-						
+						if (directionChosen && directionKey != 0) {
+							// Normalize virtual-key codes
+							int dirVK = normalize_vk(directionKey);
+							DetectionValues::currentDirectionKey = dirVK;
+							DetectionValues::executingJump = true;
+
+							MapKeys::PressKey(dirVK);
+
+							std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+							// Release direction key after jump execution
+							MapKeys::ReleaseKey(dirVK);
+							DetectionValues::executingJump = false;
+							DetectionValues::currentDirectionKey = 0;
+
+							// Reset stored jump
+							jumpStored = false;
+							storedJumpPower = 0;
+						}
+						else {
+							// No direction chosen; discard stored jump after a short timeout to avoid lingering
+							const int WAIT_DISCARD_MS = 3000;
+							int waited = 0;
+
+							// discard
+							jumpStored = false;
+							storedJumpPower = 0;
+						}
+					}
+					// else still above the line; just keep charging
+				}
+
+			}
+			catch (...) {
+				// swallow and continue
+			}
+
+			std::this_thread::sleep_for(15ms);
+		}
+	}
+}
