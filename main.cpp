@@ -61,7 +61,20 @@ int main() {
 
             userInput.CustomElementsOnWindow(IOValues::selectedSquare, fileManager);
         }
+        else if (DetectionValues::jumpDetectionActivated) {
+
+            if (GraphicsValues::CVJumpLine::Lines[0].SELECTED == true) {
+
+                userInput.CustomElementsOnWindow();
+            }
+        }
 
     }
 
+    // Join threads and release camera
+    keyDetectionThread.join();
+    jumpDetectionThread.join();
+    cap.release();
+
+    return 0;
 }
