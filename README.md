@@ -1,3 +1,5 @@
+<img width="450" height="275" alt="Image" src="https://github.com/user-attachments/assets/d5dca46c-8683-4e6d-b553-b613b214565a" />
+
 # Real-Time Motion Gaming
 
 A real-time motion-controlled gaming system built with **C++**, **OpenCV**, and **CMake**.
