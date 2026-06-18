@@ -411,6 +411,17 @@ namespace Detection {
 
 							MapKeys::PressKey(dirVK);
 
+							// Execute the stored jump: SPACE down, wait storedJumpPower, SPACE up
+							int spaceVK = 0x20; // default
+							auto itSpace = MapKeys::keyMapEX.find(32);
+							if (itSpace != MapKeys::keyMapEX.end()) spaceVK = itSpace->second;
+
+							if (spaceVK != 0) {
+								MapKeys::PressKey(spaceVK);
+								std::this_thread::sleep_for(std::chrono::milliseconds(storedJumpPower));
+								MapKeys::ReleaseKey(spaceVK);
+							}
+
 							std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
 							// Release direction key after jump execution
@@ -433,6 +444,9 @@ namespace Detection {
 										anyMotion = true; break;
 									}
 								}
+								if (anyMotion) break;
+								std::this_thread::sleep_for(std::chrono::milliseconds(40));
+								waited += 100;
 							}
 
 							// discard
