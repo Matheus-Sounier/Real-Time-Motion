@@ -364,4 +364,22 @@ namespace Detection {
 								}
 							}
 
-						
+							// If no direction chosen yet, also consider exit conditions: if jump detection disabled
+							if (!jumpDetectionActivated) break;
+
+							try {
+								cv::Mat liveImg = CVMatFrames::JumpIMGDil.empty() ? CVMatFrames::JumpIMGThres : CVMatFrames::JumpIMGDil;
+								int liveChanged = 0;
+								try {
+									if (!liveImg.empty()) {
+										std::vector<std::vector<cv::Point>> contours;
+										cv::Mat tmp = liveImg.clone();
+										cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+										for (const auto& c : contours) {
+											double a = cv::contourArea(c);
+											if (a >= GraphicsValues::TOLERANCE) liveChanged += static_cast<int>(a);
+										}
+									}
+								}
+								catch (...) { liveChanged = 0; }
+							
