@@ -51,5 +51,17 @@ int main() {
         imageManager.preprocessImage(GraphicsValues::CVMatFrames::imgFlip);
         imageManager.drawSquares(GraphicsValues::CVMatFrames::imgFlip);
 
+        if (DetectionValues::jumpDetectionActivated) {
+
+            imageManager.drawJumpLine(GraphicsValues::CVMatFrames::imgFlip);
+            imageManager.preprocessImageAboveLine(GraphicsValues::CVMatFrames::imgFlip);
+        }
+
+        if (IOValues::selectedSquare != -1) {
+
+            userInput.CustomElementsOnWindow(IOValues::selectedSquare, fileManager);
+        }
+
     }
+
 }
