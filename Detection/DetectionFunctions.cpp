@@ -398,6 +398,11 @@ namespace Detection {
 							std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
 						}
 
+						if (restartedCharging) {
+							// a new charging cycle started; go handle it in the outer loop so UI updates
+							continue;
+						}
+
 						if (directionChosen && directionKey != 0) {
 							// Normalize virtual-key codes
 							int dirVK = normalize_vk(directionKey);
@@ -421,6 +426,14 @@ namespace Detection {
 							// No direction chosen; discard stored jump after a short timeout to avoid lingering
 							const int WAIT_DISCARD_MS = 3000;
 							int waited = 0;
+							while (waited < WAIT_DISCARD_MS && !CVSquares::Squares.empty()) {
+								bool anyMotion = false;
+								for (const auto& sq : CVSquares::Squares) {
+									if (sq.MOTION_DETECTED) {
+										anyMotion = true; break;
+									}
+								}
+							}
 
 							// discard
 							jumpStored = false;
