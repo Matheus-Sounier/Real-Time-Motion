@@ -21,4 +21,23 @@ int main() {
     cv::VideoCapture cap(cam);
     cap.read(GraphicsValues::CVMatFrames::imgFlip);
 
+    fileManager.readSavedSquares();
+
+    fileManager.readTolerance();
+
+    userInput.DisplayInstructions();
+
+    DetectionValues::jumpDetectionActivated = userInput.activateJumpDetection();
+
+    thread keyDetectionThread([&motionDetection]() {
+        motionDetection.detectMovement();
+    });
+
+    thread jumpDetectionThread([&motionDetection]() {
+        motionDetection.detectJump();
+    });
+
+    // Create window
+    cv::namedWindow("Jump King IRL", cv::WINDOW_AUTOSIZE);
+  
 }
