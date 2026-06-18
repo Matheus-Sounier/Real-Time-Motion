@@ -40,4 +40,16 @@ int main() {
     // Create window
     cv::namedWindow("Jump King IRL", cv::WINDOW_AUTOSIZE);
   
+    // Program loop
+    while (true) {
+        cap.read(GraphicsValues::CVMatFrames::img);
+        cv::flip(GraphicsValues::CVMatFrames::img, GraphicsValues::CVMatFrames::imgFlip, 1);
+
+        // Handle mouse events
+        cv::setMouseCallback("Jump King IRL", userInput.onMouse);
+
+        imageManager.preprocessImage(GraphicsValues::CVMatFrames::imgFlip);
+        imageManager.drawSquares(GraphicsValues::CVMatFrames::imgFlip);
+
+    }
 }
