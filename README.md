@@ -1,10 +1,10 @@
-<img width="450" height="275" alt="Image" src="https://github.com/user-attachments/assets/d5dca46c-8683-4e6d-b553-b613b214565a" />
+<img width="400" height="225" alt="Image" src="https://github.com/user-attachments/assets/f7180e4d-108d-4c6e-a913-f30919abd5b3" />
 
 # Real-Time Motion
 
 A real-time motion-controlled system built with **C++**, **OpenCV**, and **CMake**.
 
-This project allows players to control games using body movement detected through a webcam. It was originally designed around a Jump King-style gameplay mechanic, where physical jumps and movement inside detection areas are converted into keyboard inputs.
+This project allows players to control space and keys using body movement detected through a webcam.
 
 ---
 
