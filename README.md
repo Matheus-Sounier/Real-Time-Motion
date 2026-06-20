@@ -1,8 +1,8 @@
 <img width="450" height="275" alt="Image" src="https://github.com/user-attachments/assets/d5dca46c-8683-4e6d-b553-b613b214565a" />
 
-# Real-Time Motion Gaming
+# Real-Time Motion
 
-A real-time motion-controlled gaming system built with **C++**, **OpenCV**, and **CMake**.
+A real-time motion-controlled system built with **C++**, **OpenCV**, and **CMake**.
 
 This project allows players to control games using body movement detected through a webcam. It was originally designed around a Jump King-style gameplay mechanic, where physical jumps and movement inside detection areas are converted into keyboard inputs.
 
@@ -72,13 +72,13 @@ Add OpenCV to your Windows `PATH` and configure it correctly for your build envi
 Clone the repository:
 
 ```bash
-git clone git@github.com:Matheus-Sounier/Real-Time-Motion-Gaming.git
+git clone git@github.com:Matheus-Sounier/Real-Time-Motion.git
 ```
 
 Enter the project directory:
 
 ```bash
-cd Real-Time-Motion-Gaming
+cd Real-Time-Motion
 ```
 
 Create a build directory:
