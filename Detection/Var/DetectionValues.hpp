@@ -5,12 +5,15 @@
 
 namespace DetectionValues {
 
+    // Jump detection enabled
     extern bool jumpDetectionActivated;
 
+    // Background frame for movement detection
     extern cv::Mat firstFrame;
 
-    extern int PIXEL_THRESHOLD;
-    extern int MOVEMENT_THRESHOLD;
+    // Thresholds
+    extern int PIXEL_THRESHOLD;       // threshold for binarization
+    extern int MOVEMENT_THRESHOLD;    // area threshold for movement in ROIs
 
     // Jump detection frame and threshold
     extern cv::Mat jumpFrame;
@@ -19,9 +22,9 @@ namespace DetectionValues {
     // Jump state
     extern bool chargingJump;
     extern bool jumpStored;
-    extern int storedJumpPower;
+    extern int storedJumpPower; // ms
     extern bool executingJump;
-    extern int currentDirectionKey;
-    extern int currentChargingMs;
+    extern int currentDirectionKey; // chosen direction while executing
+    extern int currentChargingMs; // charging time for UI
     extern std::chrono::steady_clock::time_point jumpStartTime;
 }
