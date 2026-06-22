@@ -83,24 +83,13 @@ void IO::UserInput::DisplayInstructions() {
         cout << endl << "HOW TO REMOVE A SQUARE:" << endl
             << "- Click on a square to select it." << endl
             << "- Right-click on a square to remove it." << endl;
-        cout << endl << "Enable jump detection? (send 'yes' or 'no')" << endl;
-    //}
+        // Jump detection will be handled automatically; no prompt shown
 }
 
 bool IO::UserInput::activateJumpDetection() {
-    string JumpDetectionINPUT;
-
-    cin >> JumpDetectionINPUT;
-
-    if (JumpDetectionINPUT == "yes") {
-
-        cout << endl << ">> Jump Detection ON\n\n\n\n" << endl;
-
-        return true;
-    }
-    
-    cout << endl << ">> Jump Detection OFF\n\n\n\n" << endl;
-    return false;
+    // Default to enabling jump detection without prompting the user
+    cout << endl << ">> Jump Detection ON\n\n\n\n" << endl;
+    return true;
 }
 
 void IO::UserInput::onMouse(int event, int x, int y, int flags, void* userdata) {
