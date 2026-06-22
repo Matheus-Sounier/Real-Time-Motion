@@ -50,8 +50,8 @@ namespace Detection {
 				// motion loop
 				const size_t count = (CVSquares::Squares.size() < CVSquares::Frames.size()) ? CVSquares::Squares.size() : CVSquares::Frames.size();
 
-				const int MOTION_ON_STABLE_MS = 30; // Duration doing moviments in the area
-				const int MOTION_OFF_STABLE_MS = 10; // Duration to release the key
+				const int MOTION_ON_STABLE_MS = 30;
+				const int MOTION_OFF_STABLE_MS = 10;
 				static std::unordered_map<int, std::chrono::steady_clock::time_point> motionOnStart;
 				static std::unordered_map<int, std::chrono::steady_clock::time_point> motionOffStart;
 				static std::unordered_map<int, std::chrono::steady_clock::time_point> pressStartTimes;
@@ -188,17 +188,13 @@ namespace Detection {
 					continue;
 				}
 
-
-				// Need jump image available
 				if (CVMatFrames::JumpIMGThres.empty() && CVMatFrames::JumpIMGDil.empty()) {
 					std::this_thread::sleep_for(20ms);
 					continue;
 				}
 
-				// Use dilated image if available, else threshold image
 				cv::Mat imgToCheck = CVMatFrames::JumpIMGDil.empty() ? CVMatFrames::JumpIMGThres : CVMatFrames::JumpIMGDil;
 
-				// Count changed area using contours filtered by tolerance for stability
 				int changed = 0;
 				try {
 					if (!imgToCheck.empty()) {
@@ -258,7 +254,7 @@ namespace Detection {
 				catch (...) {
 					// ignore debug failures
 				}
-				const int PRE_STABLE_MS = 80; // require presence for this period before starting charge
+				const int PRE_STABLE_MS = 80;
 				static std::chrono::steady_clock::time_point preStableStart;
 				if (!chargingJump && changed >= JUMP_THRESHOLD) {
 					auto now = std::chrono::steady_clock::now();
