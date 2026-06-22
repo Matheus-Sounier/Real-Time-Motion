@@ -136,26 +136,6 @@ HOW TO MOVE A SQUARE:
 HOW TO REMOVE A SQUARE:
 - Click on a square to select it.
 - Right-click on a square to remove it.
-
-Enable jump detection? (send 'yes' or 'no')
 ```
 
 ---
-
-## Jump Detection Setup
-
-When the application starts, you will be asked:
-
-```text
-Enable jump detection? (send 'yes' or 'no')
-```
-
-### If you choose `yes`
-
-- Jump detection will be enabled.
-- A horizontal white line will appear.
-- Physical jumps crossing the line will be detected.
-
-### If you choose `no`
-
-- The program won't work properly.
