@@ -18,5 +18,5 @@ std::vector<GraphicsValues::CVJumpLine::Line> GraphicsValues::CVJumpLine::Lines;
 
 bool GraphicsValues::CVJumpLine::LineExists = false;
 
-// Minimum contour area to consider
+// Minimum contour area to consider (tolerance)
 unsigned GraphicsValues::TOLERANCE = 7;
