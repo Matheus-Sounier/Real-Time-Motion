@@ -17,25 +17,25 @@ namespace GraphicsValues {
 
         /// Processed images for each square
         struct Images {
-            cv::Mat imgCrop;       ///< Cropped image of the square.
-            cv::Mat imgDil;        ///< Dilated image of the square.
-            cv::Mat imgGray;       ///< Grayscale image of the square.
-            cv::Mat imgThres;      ///< Thresholded image of the square.
-            cv::Mat imgBackground; ///< Background image of the square.
-            cv::Mat imgSub;        ///< Subtracted image of the square.
-            int ID;                ///< Random ID of the square.
+            cv::Mat imgCrop;    
+            cv::Mat imgDil;      
+            cv::Mat imgGray;      
+            cv::Mat imgThres;      
+            cv::Mat imgBackground; 
+            cv::Mat imgSub;        
+            int ID;                
         };
 
         /// Square metadata
         struct Rectangles {
-            cv::Point TL;                ///< Top-left corner of the square.
-            cv::Point BR;                ///< Bottom-right corner of the square.
-            cv::Scalar COLOR;            ///< Color of the square.
-            int KEY;                     ///< Key associated with the square.
-            std::string DISPLAYKEY;      ///< Display key associated with the square.
-            bool SELECTED;               ///< Indicates whether the square is selected.
-            bool MOTION_DETECTED;        ///< Indicates whether motion is detected within the square.
-            int ID;                      ///< Random ID of the square.
+            cv::Point TL;            
+            cv::Point BR;                
+            cv::Scalar COLOR;            
+            int KEY;                     
+            std::string DISPLAYKEY;      
+            bool SELECTED;               
+            bool MOTION_DETECTED;
+            int ID;
         };
 
         extern std::vector<Images> Frames;

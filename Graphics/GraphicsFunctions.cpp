@@ -193,11 +193,9 @@ void Graphics::ImageManager::preprocessImageAboveLine(Mat imgFlip) {
             try { meanBg = cv::mean(GraphicsValues::CVMatFrames::JumpIMGBackground)[0]; } catch(...) { meanBg = 128.0; }
             int adaptiveThresh = DetectionValues::PIXEL_THRESHOLD;
             if (meanBg < 80.0) {
-                // darker background -> increase threshold to ignore small noise
                 adaptiveThresh = std::min(255, adaptiveThresh + static_cast<int>((80.0 - meanBg) / 2.0));
             }
             else if (meanBg > 180.0) {
-                // very bright background -> slightly lower threshold
                 adaptiveThresh = std::max(1, adaptiveThresh - static_cast<int>((meanBg - 180.0) / 4.0));
             }
 
