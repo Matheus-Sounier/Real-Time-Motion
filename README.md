@@ -1,10 +1,4 @@
-<<<<<<< Updated upstream
-<img width="400" height="225" alt="Image" src="https://github.com/user-attachments/assets/f7180e4d-108d-4c6e-a913-f30919abd5b3" />
-=======
-<img width="450" height="275" alt="Image" src="https://github.com/user-attachments/assets/d5dca46c-8683-4e6d-b553-b613b214565a" />
-
-# Real-Time Motion Gaming
->>>>>>> Stashed changes
+<img width="550" height="300" alt="Image" src="https://github.com/user-attachments/assets/f7180e4d-108d-4c6e-a913-f30919abd5b3" />
 
 # Real-Time Motion
 
