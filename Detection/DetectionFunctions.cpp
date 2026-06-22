@@ -1,4 +1,5 @@
 #include "DetectionFunctions.hpp"
+
 #include <opencv2/opencv.hpp>
 #include <thread>
 #include <chrono>
@@ -78,7 +79,7 @@ namespace Detection {
 								std::vector<std::vector<cv::Point>> contours;
 								cv::Mat tmp = fr.imgThres.clone();
 								cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-								for (const auto &c : contours) {
+								for (const auto& c : contours) {
 									double a = cv::contourArea(c);
 									if (a >= GraphicsValues::TOLERANCE) changed += static_cast<int>(a);
 								}
@@ -204,24 +205,27 @@ namespace Detection {
 						std::vector<std::vector<cv::Point>> contours;
 						cv::Mat tmp = imgToCheck.clone();
 						cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-						for (const auto &c : contours) {
+						for (const auto& c : contours) {
 							double a = cv::contourArea(c);
 							if (a >= GraphicsValues::TOLERANCE) changed += static_cast<int>(a);
 						}
 					}
-				} catch (...) { changed = 0; }
-
-			const int JUMP_COOLDOWN_MS = 100;
-
-			if (jumpStored && changed >= JUMP_THRESHOLD) {
-				auto nowCheck = std::chrono::steady_clock::now();
-				if (lastLandingTime.time_since_epoch().count() != 0) {
-					auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(nowCheck - lastLandingTime).count();
-					if (diff < JUMP_COOLDOWN_MS) {
-						std::this_thread::sleep_for(15ms);
-						continue;
-					}
 				}
+				catch (...) { changed = 0; }
+
+				const int JUMP_COOLDOWN_MS = 100;
+
+				if (jumpStored && changed >= JUMP_THRESHOLD) {
+					// ensure cooldown passed
+					auto nowCheck = std::chrono::steady_clock::now();
+					if (lastLandingTime.time_since_epoch().count() != 0) {
+						auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(nowCheck - lastLandingTime).count();
+						if (diff < JUMP_COOLDOWN_MS) {
+							// ignore this spike as it's within the cooldown window
+							std::this_thread::sleep_for(15ms);
+							continue;
+						}
+					}
 					chargingJump = true;
 					jumpStored = false;
 					storedJumpPower = 0;
@@ -231,32 +235,30 @@ namespace Detection {
 					continue;
 				}
 
-			try {
-				for (size_t qi = 0; qi < CVSquares::Frames.size() && qi < CVSquares::Squares.size(); ++qi) {
-					int sqChanged = 0;
-					try {
-						const auto &f = CVSquares::Frames[qi];
-						if (!f.imgThres.empty()) {
-							std::vector<std::vector<cv::Point>> contours;
-							cv::Mat tmp = f.imgThres.clone();
-							cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-							for (const auto &c : contours) {
-								double a = cv::contourArea(c);
-								if (a >= GraphicsValues::TOLERANCE) sqChanged += static_cast<int>(a);
+				try {
+					for (size_t qi = 0; qi < CVSquares::Frames.size() && qi < CVSquares::Squares.size(); ++qi) {
+						int sqChanged = 0;
+						try {
+							const auto& f = CVSquares::Frames[qi];
+							if (!f.imgThres.empty()) {
+								std::vector<std::vector<cv::Point>> contours;
+								cv::Mat tmp = f.imgThres.clone();
+								cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+								for (const auto& c : contours) {
+									double a = cv::contourArea(c);
+									if (a >= GraphicsValues::TOLERANCE) sqChanged += static_cast<int>(a);
+								}
 							}
 						}
-					} catch (...) { sqChanged = 0; }
-					if ((qi % 2) == 0) {
-						std::cout << "[DEBUG][square] idx=" << qi << " changed=" << sqChanged << " key=" << CVSquares::Squares[qi].KEY << " motion=" << (CVSquares::Squares[qi].MOTION_DETECTED ? 1 : 0) << std::endl;
+						catch (...) { sqChanged = 0; }
+						// debug output removed to avoid printing square debug information
 					}
-					// do not create imshow windows in debug to avoid extra UI; only print values
+					// no cv::waitKey here to avoid interfering with main UI
 				}
-
-			}
-			catch (...) {
-				// ignore debug failures
-			}
-				const int PRE_STABLE_MS = 80;
+				catch (...) {
+					// ignore debug failures
+				}
+				const int PRE_STABLE_MS = 80; // require presence for this period before starting charge
 				static std::chrono::steady_clock::time_point preStableStart;
 				if (!chargingJump && changed >= JUMP_THRESHOLD) {
 					auto now = std::chrono::steady_clock::now();
@@ -268,17 +270,18 @@ namespace Detection {
 						DetectionValues::currentChargingMs = 0;
 						preStableStart = std::chrono::steady_clock::time_point();
 					}
-				} else if (changed < JUMP_THRESHOLD) {
+				}
+				else if (changed < JUMP_THRESHOLD) {
 					preStableStart = std::chrono::steady_clock::time_point();
 				}
 
 				bool restartedCharging = false;
 				if (chargingJump) {
-				try {
-					auto nowDraw = std::chrono::steady_clock::now();
-					DetectionValues::currentChargingMs = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(nowDraw - jumpStartTime).count());
-				}
-				catch (...) {}
+					try {
+						auto nowDraw = std::chrono::steady_clock::now();
+						DetectionValues::currentChargingMs = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(nowDraw - jumpStartTime).count());
+					}
+					catch (...) {}
 					if (changed < JUMP_THRESHOLD) {
 
 						const int LAND_STABLE_MS = 60;
@@ -296,12 +299,13 @@ namespace Detection {
 									std::vector<std::vector<cv::Point>> contours;
 									cv::Mat tmp = liveImg.clone();
 									cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-									for (const auto &c : contours) {
+									for (const auto& c : contours) {
 										double a = cv::contourArea(c);
 										if (a >= GraphicsValues::TOLERANCE) liveChanged += static_cast<int>(a);
 									}
 								}
-							} catch (...) { liveChanged = 0; }
+							}
+							catch (...) { liveChanged = 0; }
 							if (liveChanged >= JUMP_THRESHOLD) {
 								// bounce back above threshold -> restart charging
 								restartedCharging = true;
@@ -311,9 +315,12 @@ namespace Detection {
 
 						if (restartedCharging) {
 							chargingJump = true;
+							// restart time
 							jumpStartTime = std::chrono::steady_clock::now();
 							DetectionValues::currentChargingMs = 0;
-						} else {
+						}
+						else {
+							// Confirm landed
 							chargingJump = false;
 							auto now = std::chrono::steady_clock::now();
 							auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - jumpStartTime).count();
@@ -326,80 +333,87 @@ namespace Detection {
 
 							DetectionValues::storedJumpPower = power;
 							jumpStored = true;
-				lastLandingTime = std::chrono::steady_clock::now();
+							// record landing time to prevent immediate re-detection
+							lastLandingTime = std::chrono::steady_clock::now();
 						}
 
-					bool directionChosen = false;
-					int directionKey = 0;
+						bool directionChosen = false;
+						int directionKey = 0; // virtual key code from MapKeys
 
-					const int POLL_INTERVAL_MS = 30;
-					const int STABLE_MS = 60;
+						const int POLL_INTERVAL_MS = 30;
+						const int STABLE_MS = 60;
 
-				while (!directionChosen) {
-						// scan squares for motion
-						for (size_t si = 0; si < CVSquares::Squares.size(); ++si) {
-							auto &sqRef = CVSquares::Squares[si];
-							if (sqRef.MOTION_DETECTED && sqRef.KEY != 0) {
-								auto t0 = std::chrono::steady_clock::now();
-								int waited = 0;
-								while (waited < STABLE_MS) {
-									std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
-									waited += POLL_INTERVAL_MS;
-									if (!CVSquares::Squares[si].MOTION_DETECTED) break;
+						while (!directionChosen) {
+							// scan squares for motion
+							for (size_t si = 0; si < CVSquares::Squares.size(); ++si) {
+								auto& sqRef = CVSquares::Squares[si];
+								if (sqRef.MOTION_DETECTED && sqRef.KEY != 0) {
+									// require stability
+									auto t0 = std::chrono::steady_clock::now();
+									int waited = 0;
+									while (waited < STABLE_MS) {
+										std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
+										waited += POLL_INTERVAL_MS;
+										// re-check motion flag (it may have changed)
+										if (!CVSquares::Squares[si].MOTION_DETECTED) break;
+									}
+									if (CVSquares::Squares[si].MOTION_DETECTED && waited >= STABLE_MS) {
+										directionKey = CVSquares::Squares[si].KEY;
+										directionChosen = true;
+										break;
+									}
 								}
-								if (CVSquares::Squares[si].MOTION_DETECTED && waited >= STABLE_MS) {
-									directionKey = CVSquares::Squares[si].KEY;
-									directionChosen = true;
+							}
+
+							// If no direction chosen yet, also consider exit conditions: if jump detection disabled
+							if (!jumpDetectionActivated) break;
+
+							try {
+								cv::Mat liveImg = CVMatFrames::JumpIMGDil.empty() ? CVMatFrames::JumpIMGThres : CVMatFrames::JumpIMGDil;
+								int liveChanged = 0;
+								try {
+									if (!liveImg.empty()) {
+										std::vector<std::vector<cv::Point>> contours;
+										cv::Mat tmp = liveImg.clone();
+										cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+										for (const auto& c : contours) {
+											double a = cv::contourArea(c);
+											if (a >= GraphicsValues::TOLERANCE) liveChanged += static_cast<int>(a);
+										}
+									}
+								}
+								catch (...) { liveChanged = 0; }
+								if (liveChanged >= JUMP_THRESHOLD) {
+									// begin new charging cycle reusing existing flags
+									chargingJump = true;
+									jumpStored = false;
+									storedJumpPower = 0;
+									jumpStartTime = std::chrono::steady_clock::now();
+									DetectionValues::currentChargingMs = 0;
+									restartedCharging = true;
 									break;
 								}
 							}
+							catch (...) {}
+
+							std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
 						}
 
-					// If no direction chosen yet, also consider exit conditions: if jump detection disabled
-					if (!jumpDetectionActivated) break;
-
-					try {
-						cv::Mat liveImg = CVMatFrames::JumpIMGDil.empty() ? CVMatFrames::JumpIMGThres : CVMatFrames::JumpIMGDil;
-						int liveChanged = 0;
-						try {
-							if (!liveImg.empty()) {
-								std::vector<std::vector<cv::Point>> contours;
-								cv::Mat tmp = liveImg.clone();
-								cv::findContours(tmp, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-								for (const auto &c : contours) {
-									double a = cv::contourArea(c);
-									if (a >= GraphicsValues::TOLERANCE) liveChanged += static_cast<int>(a);
-								}
-							}
-						} catch (...) { liveChanged = 0; }
-						if (liveChanged >= JUMP_THRESHOLD) {
-							chargingJump = true;
-							jumpStored = false;
-							storedJumpPower = 0;
-							jumpStartTime = std::chrono::steady_clock::now();
-							DetectionValues::currentChargingMs = 0;
-							restartedCharging = true;
-							break;
+						if (restartedCharging) {
+							// a new charging cycle started; go handle it in the outer loop so UI updates
+							continue;
 						}
-					}
-					catch (...) {}
 
-					std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
-					}
+						if (directionChosen && directionKey != 0) {
+							// Normalize virtual-key codes
+							int dirVK = normalize_vk(directionKey);
+							DetectionValues::currentDirectionKey = dirVK;
+							DetectionValues::executingJump = true;
 
-				if (restartedCharging) {
-					continue;
-				}
-
-					if (directionChosen && directionKey != 0) {
-						int dirVK = normalize_vk(directionKey);
-						DetectionValues::currentDirectionKey = dirVK;
-						DetectionValues::executingJump = true;
-
-						MapKeys::PressKey(dirVK);
+							MapKeys::PressKey(dirVK);
 
 							// Execute the stored jump: SPACE down, wait storedJumpPower, SPACE up
-							int spaceVK = 0x20;
+							int spaceVK = 0x20; // default
 							auto itSpace = MapKeys::keyMapEX.find(32);
 							if (itSpace != MapKeys::keyMapEX.end()) spaceVK = itSpace->second;
 
@@ -415,29 +429,33 @@ namespace Detection {
 							MapKeys::ReleaseKey(dirVK);
 							DetectionValues::executingJump = false;
 							DetectionValues::currentDirectionKey = 0;
+
+							// Reset stored jump
 							jumpStored = false;
 							storedJumpPower = 0;
 						}
 						else {
+							// No direction chosen; discard stored jump after a short timeout to avoid lingering
 							const int WAIT_DISCARD_MS = 3000;
 							int waited = 0;
 							while (waited < WAIT_DISCARD_MS && !CVSquares::Squares.empty()) {
 								bool anyMotion = false;
-								for (const auto& sq : CVSquares::Squares) { 
-									if (sq.MOTION_DETECTED) { 
-										anyMotion = true; break; 
-									} 
+								for (const auto& sq : CVSquares::Squares) {
+									if (sq.MOTION_DETECTED) {
+										anyMotion = true; break;
+									}
 								}
 								if (anyMotion) break;
 								std::this_thread::sleep_for(std::chrono::milliseconds(40));
 								waited += 100;
 							}
 
-						jumpStored = false;
-						storedJumpPower = 0;
+							// discard
+							jumpStored = false;
+							storedJumpPower = 0;
 						}
 					}
-					
+					// else still above the line; just keep charging
 				}
 
 			}
